@@ -41,7 +41,7 @@ class EastmoneySpider(scrapy.Spider):
 
 				stockListItem['exchange'] = sh
 				stockListItem['name'] = name.split('(')[0]
-				stockListItem['stock_code'] = stock_code_pat.findall(name)
+				stockListItem['code'] = stock_code_pat.findall(name)
 				stockListItem['url'] = url
 				
 				#yield response.follow(url, callback = self.parse_stock_page)
@@ -75,72 +75,73 @@ class EastmoneySpider(scrapy.Spider):
 				th = tr.xpath('th[@class="tips-fieldname-Left"]')
 				td = tr.xpath('td[@class="tips-data-Left"]')
 				for _th, _td in zip(th, td):
-					name = _th.xpath('span/text()').extract()
+					title = _th.xpath('span/text()').extract()
 					value = _td.xpath('span/text()').extract()
 
-					if name[0] == u"基本每股收益(元)":
+					if title[0] == u"基本每股收益(元)":
 						stockBaseInfo['eps'] = value[0]
-					elif name[0] == u"扣非每股收益(元)":
+					elif title[0] == u"扣非每股收益(元)":
 						stockBaseInfo['neps'] = value[0]
-					elif name[0] == u"稀释每股收益(元)":
+					elif title[0] == u"稀释每股收益(元)":
 						stockBaseInfo['deps'] = value[0]
-					elif name[0] == u"每股净资产(元)":
+					elif title[0] == u"每股净资产(元)":
 						stockBaseInfo['bvps'] = value[0]
-					elif name[0] == u"每股公积金(元)":
+					elif title[0] == u"每股公积金(元)":
 						stockBaseInfo['cfps'] = value[0]
-					elif name[0] == u"每股未分配利润(元)":
+					elif title[0] == u"每股未分配利润(元)":
 						stockBaseInfo['uddps'] = value[0]
-					elif name[0] == u"每股经营现金流(元)":
+					elif title[0] == u"每股经营现金流(元)":
 						stockBaseInfo['ocfps'] = value[0]
-					elif name[0] == u"总股本(万股)":
+					elif title[0] == u"总股本(万股)":
 						stockBaseInfo['tcs'] = value[0]
-					elif name[0] == u"流通股本(万股)":
+					elif title[0] == u"流通股本(万股)":
 						stockBaseInfo['nc'] = value[0]
-					elif name[0] == u"加权净资产收益率(%)":
+					elif title[0] == u"加权净资产收益率(%)":
 						stockBaseInfo['wnay'] = value[0]
-					elif name[0] == u"营业总收入(元)":
+					elif title[0] == u"营业总收入(元)":
 						stockBaseInfo['gr'] = value[0]
-					elif name[0] == u"归属净利润(元)":
+					elif title[0] == u"归属净利润(元)":
 						stockBaseInfo['anp'] = value[0]
-					elif name[0] == u"扣非净利润(元)":
+					elif title[0] == u"扣非净利润(元)":
 						stockBaseInfo['nnp'] = value[0]
-					elif name[0] == u"毛利率(%)":
+					elif title[0] == u"毛利率(%)":
 						stockBaseInfo['gir'] = value[0]
-					elif name[0] == u"营业总收入滚动环比增长(%)":
+					elif title[0] == u"营业总收入滚动环比增长(%)":
 						stockBaseInfo['grrrc'] = value[0]
-					elif name[0] == u"归属净利润滚动环比增长(%)":
+					elif title[0] == u"归属净利润滚动环比增长(%)":
 						stockBaseInfo['anprrc'] = value[0]
-					elif name[0] == u"扣非净利润滚动环比增长(%)":
+					elif title[0] == u"扣非净利润滚动环比增长(%)":
 						stockBaseInfo['nnprrc'] = value[0]
-					elif name[0] == u"资产负债率(%)":
+					elif title[0] == u"资产负债率(%)":
 						stockBaseInfo['alr'] = value[0]
-					elif name[0] == u"营业总收入同比增长(%)":
+					elif title[0] == u"营业总收入同比增长(%)":
 						stockBaseInfo['yygtr'] = value[0]
-					elif name[0] == u"归属净利润同比增长(%)":
+					elif title[0] == u"归属净利润同比增长(%)":
 						stockBaseInfo['anpg'] = value[0]
-					elif name[0] == u"扣非净利润同比增长(%)":
+					elif title[0] == u"扣非净利润同比增长(%)":
 						stockBaseInfo['nnpg'] = value[0]
 					else:
 						self.logger.warning("%s: Unknow item, %s = %s", sys._getframe().f_code.co_name, name, value)
 
-		if stockBaseInfo:
-			yield stockBaseInfo
-
 		# 核心题材
-		subjectMatter = SubjectMatter()
 		sms = response.xpath('//div[@class="section"]/div/div[@class="summary"]/p')
+		sm_content = ""
 
 		for sm in sms: 
 			content = sm.xpath('./text()').extract()
 			self.logger.debug("content: %s", content)
 			#content = re.sub(u'(要点)<.*>', '', _content)
-			s = '' 
 			for c in content:
-				s += c
+				sm_content += c
 			
-			self.logger.debug(u"题材要点 %s", s)
-			subjectMatter['sm'] = s
-			yield subjectMatter
+			sm_content += '\n'
+	
+		self.logger.debug(u"题材要点 %s", sm_content)
+		stockBaseInfo['sm'] = sm_content
+
+		if stockBaseInfo:
+			yield stockBaseInfo
+
 	
 	def parse_eastmoney_data_page(self, response):
 		pass

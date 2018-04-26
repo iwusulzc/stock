@@ -10,17 +10,13 @@ import scrapy
 
 class StockItem(scrapy.Item):
 	name = scrapy.Field()
-	stock_code = scrapy.Field()
-
-class StockListItem(scrapy.Item):
+	code = scrapy.Field()
 	exchange = scrapy.Field()
-	name = scrapy.Field()
-	stock_code = scrapy.Field()
+
+class StockListItem(StockItem):
 	url = scrapy.Field()
 
-class StockBaseInfo(scrapy.Item):
-	name = scrapy.Field()    # 每股收益
-	code = scrapy.Field()    # 每股收益
+class StockBaseInfo(StockItem):
 	report_period = scrapy.Field() # 报告期
 	eps = scrapy.Field()    # 每股收益
 	neps = scrapy.Field()   # 扣非每股收益（Non earnings per share）
@@ -44,10 +40,4 @@ class StockBaseInfo(scrapy.Item):
 	yygtr = scrapy.Field()  # 营业总收入同比增长（Year-on-year growth in total revenue）
 	anpg = scrapy.Field()   # 归属净利润同比增长（Attributable net profit growth）
 	nnpg = scrapy.Field()   # 扣非净利润同比增长（Non net profit growth）
-
-class SubjectMatter(scrapy.Item):
-	sm = scrapy.Field()	
-
-class StockItem():
-	sbi = StockBaseInfo() 
-	sm = SubjectMatter()
+	sm = scrapy.Field()	    # (subject matter)
