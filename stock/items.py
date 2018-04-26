@@ -19,6 +19,8 @@ class StockListItem(scrapy.Item):
 	url = scrapy.Field()
 
 class StockBaseInfo(scrapy.Item):
+	name = scrapy.Field()    # 每股收益
+	code = scrapy.Field()    # 每股收益
 	report_period = scrapy.Field() # 报告期
 	eps = scrapy.Field()    # 每股收益
 	neps = scrapy.Field()   # 扣非每股收益（Non earnings per share）
