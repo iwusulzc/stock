@@ -47,7 +47,7 @@ class EastmoneySpider(scrapy.Spider):
 				stockListItem['url'] = url
 				
 				#yield response.follow(url, callback = self.parse_stock_page)
-				yield SplashRequest(url, callback = self.parse_stock_page, args={'wait': 10})
+				yield SplashRequest(url, callback = self.parse_stock_page, args={'wait': 20})
 			
 	def parse_stock_page(self, response):
 		f10_block = response.xpath('//div[@class="qphox"]/div[@class="hqrls"]/div[@class="cells"]')
@@ -55,11 +55,10 @@ class EastmoneySpider(scrapy.Spider):
 		if f10_block:
 				#“操盘必读”菜单
 				cpbd_url = f10_block[0].xpath('a/@href')[0].extract()	
-				self.logger.debug("cpbd url: %s", cpbd_url)
 
 				if cpbd_url:
 						# yield response.follow(cpbd_url, callback = self.parse_cpbd_page)	
-						yield SplashRequest(cpbd_url, callback = self.parse_cpbd_page, args={'wait': 10})
+						yield SplashRequest(cpbd_url, callback = self.parse_cpbd_page, args={'wait': 20})
 		else:
 			self.logger.error("f10 block url get failure")
 
@@ -76,6 +75,10 @@ class EastmoneySpider(scrapy.Spider):
 			for tr in trs:
 				th = tr.xpath('th[@class="tips-fieldname-Left"]')
 				td = tr.xpath('td[@class="tips-data-Left"]')
+
+				if not th or not td:
+					self.logger.error("%s: get stock base info", sys._getframe().f_code.co_name)
+
 				for _th, _td in zip(th, td):
 					title = _th.xpath('span/text()').extract()
 					value = _td.xpath('span/text()').extract()
@@ -137,13 +140,11 @@ class EastmoneySpider(scrapy.Spider):
 			
 			sm_content += '\n'
 	
-		self.logger.debug(u"题材要点 %s", sm_content)
 		stockBaseInfo['sm'] = sm_content
 
 		if stockBaseInfo:
 			yield stockBaseInfo
 
-	
 	def parse_eastmoney_data_page(self, response):
 		pass
 

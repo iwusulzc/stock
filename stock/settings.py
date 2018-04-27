@@ -14,6 +14,8 @@ BOT_NAME = 'stock'
 SPIDER_MODULES = ['stock.spiders']
 NEWSPIDER_MODULE = 'stock.spiders'
 
+LOG_LEVEL = 'DEBUG'
+
 SPLASH_URL = 'http://localhost:8050'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
