@@ -13,9 +13,11 @@ class EastmoneySpider(scrapy.Spider):
 			'http://quote.eastmoney.com/stock_list.html',
 			)
 
+	'''
 	def start_requests(self):
 		for url in self.start_urls:
 			yield SplashRequest(url, self.parse, args={'wait': 10})
+	'''
 
 	def parse(self, response):
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
@@ -129,7 +131,6 @@ class EastmoneySpider(scrapy.Spider):
 
 		for sm in sms: 
 			content = sm.xpath('./text()').extract()
-			self.logger.debug("content: %s", content)
 			#content = re.sub(u'(要点)<.*>', '', _content)
 			for c in content:
 				sm_content += c
