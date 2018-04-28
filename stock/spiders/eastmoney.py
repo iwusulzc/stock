@@ -6,6 +6,19 @@ from scrapy.loader import ItemLoader
 from stock.items import *
 from scrapy_splash import SplashRequest
 
+script = """
+	function main(splash, args)
+		assert(splash:go(args.url))
+		assert(splash:wait(3))
+		js = string.format("document.querySelectorAll('#ZYZBTab li')[%d].click()", args.period)
+	    splash:evaljs(js)
+		assert(splash:wait(args.wait))
+		return {
+			 html = splash:html(),
+		}
+	end
+	"""
+
 class EastmoneySpider(scrapy.Spider):
 	name = "eastmoney"
 	allowed_domains = ["eastmoney.com"]
@@ -13,11 +26,15 @@ class EastmoneySpider(scrapy.Spider):
 			'http://quote.eastmoney.com/stock_list.html',
 			)
 
-	'''
+	"""
 	def start_requests(self):
 		for url in self.start_urls:
 			yield SplashRequest(url, self.parse, args={'wait': 10})
-	'''
+	"""
+
+	def start_requests(self):
+		url = "http://emweb.securities.eastmoney.com/f10_v2/OperationsRequired.aspx?type=web&code=sz000002"
+		yield SplashRequest(url, self.parse_cpbd_page, args={'wait': 10})
 
 	def parse(self, response):
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
@@ -145,8 +162,76 @@ class EastmoneySpider(scrapy.Spider):
 		if stockBaseInfo:
 			yield stockBaseInfo
 
-	def parse_eastmoney_data_page(self, response):
-		pass
+		stock_main_indicator_url = response.urljoin(response.xpath('//div[@id="zyzb"]/a/@href').extract()[0])
+
+		for page in range(0, 3):
+			yield SplashRequest(stock_main_indicator_url, \
+				callback = self.parse_stock_main_indicator_page, endpoint='execute', \
+				args={'lua_source': script, 'wait': 10, 'period': page})
+
+	def parse_stock_main_indicator_page(self, response):
+		stock_name_map = {
+				u'基本每股收益(元)' : 'esp',
+				u'扣非每股收益(元)' : 'neps',
+				u'稀释每股收益(元)' : 'deps',
+				u'每股净资产(元)' : 'bvps',
+				u'每股公积金(元)' : 'cfps',
+				u'每股未分配利润(元)' : 'uddps',
+				u'每股经营现金流(元)' : 'ocfps',
+				u'营业总收入(元)' : 'gr',
+				u'毛利润(元)' : 'gp',
+				u'归属净利润(元)' : 'anp',
+				u'扣非净利润(元)' : 'nnp',
+				u'营业总收入同比增长(%)' : 'yygtr',
+				u'归属净利润同比增长(%)' : 'anpg',
+				u'扣非净利润同比增长(%)' : 'nnpg',
+				u'营业总收入滚动环比增长(%)' : 'grrrc',
+				u'归属净利润滚动环比增长(%)' : 'anprrc',
+				u'扣非净利润滚动环比增长(%)' : 'nnprrc',
+				u'加权净资产收益率(%)' : 'wnay',
+				u'摊薄净资产收益率(%)' : 'ridna',
+				u'摊薄总资产收益率(%)' : 'dacer',
+				u'毛利率(%)' : 'gpr',
+				u'净利率(%)' : 'npr',
+				u'实际税率(%)' : 'etr',
+				u'预收款/营业收入' : 'rrpr',
+				u'销售现金流/营业收入' : 'scfrr',
+				u'经营现金流/营业收入' : 'oircf',
+				u'总资产周转率(次)' : 'ttc',
+				u'应收账款周转天数(天)' : 'dso',
+				u'存货周转天数(天)' : 'dii',
+				u'资产负债率(%)' : 'alr',
+				u'流动负债/总负债(%)' : 'tlrcl',
+				u'流动比率' : 'lr',
+				u'速动比率' : 'qr',
+			}
+
+		# main indicator table
+		trs = response.xpath('//div[@id="divzyzb"]/table/tbody/tr')
+
+		#处理表头，取出报告期日期
+		period = []
+		ths = trs[0].xpath('th')
+
+		for th in ths:
+			value = th.xpath('span/text()').extract()[0]
+			period.append(value)
+
+		if not period:
+			pass
+
+		tds_value = []
+
+		for tr in trs:
+			# 处理表的具体内容
+			tds = tr.xpath('td')
+			td_value = []
+
+			for td in tds:
+				value = td.xpath('span/text()').extract()[0])
+				td_value.append(value)
+			tds_value.append(td_value)
+
 
 	def data_menu_url_get(self, response):
 		data_menu = response.xpath('//div[@class="nav"]/div[@class="navlist"]/ul[@class="mu101"]/li')[1]
