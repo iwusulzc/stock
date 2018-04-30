@@ -34,7 +34,7 @@ class EastmoneySpider(scrapy.Spider):
 
 	def start_requests(self):
 		url = "http://emweb.securities.eastmoney.com/f10_v2/OperationsRequired.aspx?type=web&code=sz000002"
-		yield SplashRequest(url, self.parse_cpbd_page, args={'wait': 10})
+		yield SplashRequest(url, self.transfer_page, args={'wait': 10})
 
 	def parse(self, response):
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
@@ -76,7 +76,7 @@ class EastmoneySpider(scrapy.Spider):
                 # 公司概况
                 companySurvey_url = response.xpath('//li[@id="CompanySurvey"]/a/@href').extract()[0]
                 if companySurvey_url:
-                        yield SplashRequest(companySurvey_url, callback = self.parse_company_survey_page, args={'wait': 20})
+                        yield SplashRequest(response.urljoin(companySurvey_url), callback = self.parse_company_survey_page, args={'wait': 20})
                         
         def parse_company_survey_page(self, response):
                 stockItem = StockItem()
@@ -102,9 +102,8 @@ class EastmoneySpider(scrapy.Spider):
                                 key = tm[th]
                                 stockItem[key] = td
                 # next page: 财务分析
-                financial_analysis_url = response.xpath('//li[@id="NewFinanceAnalysis"/a/@href').extract()[0]
-                r = SplashRequest(financial_analysis_url, 、
-                                  callback = self.parse_financial_analysis_page, args={'wait': 20})
+                financial_analysis_url = response.xpath('//li[@id="NewFinanceAnalysis"]/a/@href').extract()[0]
+                r = SplashRequest(response.urljoin(financial_analysis_url), callback = self.parse_financial_analysis_page, args={'wait': 20})
                 r.meta['item'] = stockItem
                 yield r        
 
