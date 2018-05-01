@@ -78,7 +78,7 @@ class StockBaseInfoPipeline(object):
 		self.file.close()
 
 	def process_item(self, item, spider):
-		if item.__class__.__name__ == 'StockBaseInfo':
+		if item.__class__.__name__ == 'StockItem0':
 			line = json.dumps(dict(item)) + '\n'
 			self.file.write(line)
 			#self.csvwriter.writerow(dict(item).values().decode('utf-8'))

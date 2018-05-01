@@ -16,8 +16,8 @@ class StockItem(scrapy.Item):
 	reg_capital = scrapy.Field()
 	region = scrapy.Field()
 	company_profile = scrapy.Field()
-        scope_business = scrapy.Field()
-        main_indicator = scrapy.Field()
+	scope_business = scrapy.Field()
+	main_indicator = scrapy.Field()
 
 	subject_matter = scrapy.Field() # 核心题材
         
