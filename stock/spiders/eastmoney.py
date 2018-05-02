@@ -26,7 +26,6 @@ class EastmoneySpider(scrapy.Spider):
 			'http://quote.eastmoney.com/stock_list.html',
 			)
 
-	"""
 	def start_requests(self):
 		for url in self.start_urls:
 			yield SplashRequest(url, self.parse, args={'wait': 10})
@@ -37,6 +36,7 @@ class EastmoneySpider(scrapy.Spider):
 		#yield SplashRequest(url, self.transfer_page, args={'wait': 10})
 		url = "http://quote.eastmoney.com/sh600028.html"
 		yield SplashRequest(url, self.parse_stock_page, args={'wait': 10})
+	"""
 
 	def parse(self, response):
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
@@ -57,7 +57,7 @@ class EastmoneySpider(scrapy.Spider):
 
 			for name, url in stock_list:
 				_name = name.split('(')[0]
-				code = stock_code_pat.findall(namea)[0]
+				code = stock_code_pat.findall(name)[0]
 
 				self.logger.info("parse %s, %s", _name, code)
 

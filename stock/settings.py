@@ -17,6 +17,7 @@ SPIDER_MODULES = ['stock.spiders']
 NEWSPIDER_MODULE = 'stock.spiders'
 
 LOG_LEVEL = 'DEBUG'
+DOWNLOAD_DELAY = 1
 
 SPLASH_URL = 'http://localhost:8050'
 
