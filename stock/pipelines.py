@@ -8,10 +8,33 @@
 import json
 import csv 
 from scrapy.exceptions import DropItem
+from scrapy.exporters import CsvItemExporter
 
 class StockPipeline(object):
     def process_item(self, item, spider):
         return item
+
+class StockItemPipeline(object):
+	def __init__(self):
+		self.files = {}
+
+	def open_spider(self, spider):
+		file = open('StockItem.csv', 'wb')
+		self.files[spider] = file
+		self.exporter = CsvItemExporter(file)
+		self.exporter.start_exporting()
+		pass
+	
+	def close_spider(self, spider):
+		self.exporter.finish_exporting()
+		self.exporter.file.close()
+	
+	def _csv_exporter(self, item):
+		pass
+
+	def process_item(self, item, spider):
+		self.exporter.export_item(item)
+		return item
 
 class StockBaseInfoPipeline(object):
 	def __init__(self):
@@ -78,8 +101,8 @@ class StockBaseInfoPipeline(object):
 		self.file.close()
 
 	def process_item(self, item, spider):
-		if item.__class__.__name__ == 'StockItem0':
-			line = json.dumps(dict(item), default = lambda o: o.__dict__) + '\n'
+		if item.__class__.__name__ == 'StockItem':
+			line = json.dumps(dict(item), default = lambda o: o.__dict__)
 			self.file.write(line)
 			#self.csvwriter.writerow(dict(item).values().decode('utf-8'))
 			raise DropItem("")

@@ -62,6 +62,24 @@ USER_AGENT_LIST = [
 
 USER_AGENT = random.choice(USER_AGENT_LIST)
 
+
+FEED_EXPORTERS = {                                                        
+	    'csv': 'stock.spiders.eastmoney_CsvItemExporter.EastmoneyCsvItemExporter',   
+}
+
+FEED_EXPORT_FIELDS = [                                                                                                                         
+	'name',                                                             
+	'code',                                                              
+	'exchange',                                                                
+	'iindustry',                                                                
+	'region',                                                           
+	'reg_capital',                                                              
+	'main_indicator',                                                              
+	'scope_business',
+	'company_profile',
+	'subject_matter',                                                             
+]
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'stock (+http://www.yourdomain.com)'
 
@@ -115,6 +133,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
+    'stock.pipelines.StockItemPipeline': 200,
     'stock.pipelines.StockBaseInfoPipeline': 300,
 }
 
