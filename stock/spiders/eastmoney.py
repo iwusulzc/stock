@@ -88,7 +88,7 @@ class EastmoneySpider(scrapy.Spider):
 	def parse_company_survey_page(self, response):
 		stockItem = StockItem()
 		
-		tm = {
+		stock_kw_dict = {
 			u'A股代码' : 'code',
 			u'A股简称' : 'name',
 			u'上市交易所' : 'exchange',
@@ -110,10 +110,10 @@ class EastmoneySpider(scrapy.Spider):
 			for th, td in zip(ths, tds):
 				title = th.strip()
 				value = td.strip()
-				if title not in tm:
+				if title not in stock_kw_dict:
 					continue
 					
-				key = tm[title]
+				key = stock_kw_dict[title]
 
 				stockItem[key] = value
 		coreconception_url = response.xpath('//li[@id="CoreConception"]/a/@href').extract()[0]
@@ -146,7 +146,7 @@ class EastmoneySpider(scrapy.Spider):
 		
 	# 财务分析页面
 	def parse_financial_analysis_page(self, response):
-		tm = {
+		stock_kw_dict = {
 			u'基本每股收益(元)' : 'eps',
 			u'扣非每股收益(元)' : 'neps',
 			u'稀释每股收益(元)' : 'deps',
@@ -189,14 +189,14 @@ class EastmoneySpider(scrapy.Spider):
 		trs = response.xpath('//div[@id="report_zyzb"]/table/tbody/tr')
 
 		#处理表头，取出报告期日期
-		period = []
+		period_date = []
 		ths = trs[0].xpath('th')
 
 		for th in ths:
 			value = th.xpath('span/text()').extract()[0]
-			period.append(value)
+			period_date.append(value)
 		
-		if not period:
+		if not period_date:
 			pass
 
 		tds_value = []
@@ -217,41 +217,43 @@ class EastmoneySpider(scrapy.Spider):
 			if td_value:
 				tds_value.append(td_value)
 
+		period_dict = {u'按报告期' : 0, u'按年度' : 1, u'按单季度' : 2}
+		period = response.xpath('//ul[@id="zyzbTab"]/li[@class="current"]/text()').extract()[0].strip()
+
 		for x in range(1, len(tds_value[0])):
 			stockMainIndicator = StockMainIndicator()
 			for y in range(len(tds_value)):
 				key = tds_value[y][0]
-				if key not in tm:
+				if key not in stock_kw_dict:
 					self.logger.warning("%s: No process key = %s", \
 						sys._getframe().f_code.co_name, key)
 					break
-				item = tm[key]
+				item = stock_kw_dict[key]
 				stockMainIndicator[item] = tds_value[y][x]
-			stockMainIndicator['period'] = period[x]
+			stockMainIndicator['date'] = period_date[x]
 			
 			_stockItem = stockItem.copy()
 			_stockItem['main_indicator'].append(stockMainIndicator)
+			_stockItem['period'] = period
 
 		yield _stockItem
 
-		current = response.xpath('//ul[@id="zyzbTab"]/li[@class="current"]/text()').extract()[0].strip()
-		if current == u'按单季度':
-			# next page:
-			pass
-		else:
-			page = 0
+		if period in period_dict:
+			page = period_dict[period]
 
-			if current == u'按报告期':
-				page = 1
-			elif current == u'按年度':
-				page = 2
-
-			if page > 0:
+			if page == 2:
+				# last page, parse next page:
+				pass
+			else:
+				next_period = page + 1
 				r = SplashRequest(response.url, \
 						callback = self.parse_financial_analysis_page, endpoint='execute', \
-						args={'lua_source': script, 'wait': 10, 'period': page})
+						args={'lua_source': script, 'wait': 10, 'period': next_period})
 				r.meta['item'] = stockItem
 				yield r
+		else:
+			self.logger.error("%s: period get error(%s)", sys._getframe().f_code.co_name, period)
+			# raise error info??
 
 	def __parse_cpbd_page(self, response):
 		stockBaseInfo = StockBaseInfo()

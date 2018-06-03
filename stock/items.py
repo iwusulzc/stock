@@ -17,12 +17,12 @@ class StockItem(scrapy.Item):
 	region = scrapy.Field()
 	company_profile = scrapy.Field()
 	scope_business = scrapy.Field()
+	period = scrapy.Field()          # 报告期
 	main_indicator = scrapy.Field()
-
-	subject_matter = scrapy.Field() # 核心题材
+	subject_matter = scrapy.Field()  # 核心题材
         
 class StockMainIndicator(scrapy.Item):
-	period = scrapy.Field() # 报告期
+	date = scrapy.Field()   # 报告期日期
 
 	tcs = scrapy.Field()    # 总股本（Total capital stock）	
 	nc = scrapy.Field()     # 流通股本（Negotiable Capital）
