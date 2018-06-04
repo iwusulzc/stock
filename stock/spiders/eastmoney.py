@@ -35,8 +35,12 @@ class EastmoneySpider(scrapy.Spider):
 	def start_requests(self):
 		#url = "http://emweb.securities.eastmoney.com/f10_v2/OperationsRequired.aspx?type=web&code=sz000002"
 		#yield SplashRequest(url, self.transfer_page, args={'wait': 10})
-		url = "http://quote.eastmoney.com/sh600028.html"
-		yield SplashRequest(url, self.parse_stock_page, args={'wait': 10})
+		urls = (
+			'http://quote.eastmoney.com/sh600028.html',
+			'http://quote.eastmoney.com/sz000002.html',
+			)
+		for url in urls:
+			yield SplashRequest(url, self.parse_stock_page, args={'wait': 10})
 
 	def parse(self, response):
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
@@ -112,10 +116,14 @@ class EastmoneySpider(scrapy.Spider):
 				value = td.strip()
 				if title not in stock_kw_dict:
 					continue
-					
+				
 				key = stock_kw_dict[title]
 
-				stockItem[key] = value
+				if (key == 'reg_capital'):
+					stockItem[key] = self.unit_convert(value)
+				else:
+					stockItem[key] = value
+
 		coreconception_url = response.xpath('//li[@id="CoreConception"]/a/@href').extract()[0]
 		r = SplashRequest(response.urljoin(coreconception_url), \
 			callback = self.parse_coreconception_page, args={'wait': 20})
@@ -229,7 +237,7 @@ class EastmoneySpider(scrapy.Spider):
 						sys._getframe().f_code.co_name, key)
 					break
 				item = stock_kw_dict[key]
-				stockMainIndicator[item] = tds_value[y][x]
+				stockMainIndicator[item] = self.unit_convert(tds_value[y][x])
 			stockMainIndicator['date'] = period_date[x]
 			
 			_stockItem = stockItem.copy()
@@ -351,3 +359,26 @@ class EastmoneySpider(scrapy.Spider):
 		if data_menu_url:
 			self.logger.debug('data menu href: %s', data_menu_url)
 		return data_menu_url
+
+	# str_value format: 1234亿, 1234万亿, 1234万
+	def unit_convert(self, str_value):
+		unit_dict = {'万亿' : 1000000000000, '千亿' : 100000000000, '亿' : 100000000, \
+					'万万' : 100000000, '千万' : 10000000, '百万' : 1000000, '十万' : 100000, '万' : 10000, '千' : 1000}
+		str_value = str_value.strip(' \n')
+		ret = re.search('^(\d+|\d+\.\d+)$', str_value)
+		if (ret is not None):
+			return str_value
+
+		ret = re.search('^(\d+|\d+\.\d+)([\u4e00-\u9fa5]+)$', str_value)
+
+		if (ret is None):
+			return str_value
+
+		value = ret.group(1)
+		unit = ret.group(2)
+		if (unit not in unit_dict):
+			self.logger.info('Unknow unit %s', unit)
+			return str_value
+		else:
+			return '{:.6g}'.format(float(value) * unit_dict[unit])
+
