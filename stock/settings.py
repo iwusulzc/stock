@@ -18,7 +18,7 @@ NEWSPIDER_MODULE = 'stock.spiders'
 
 LOG_LEVEL = 'DEBUG'
 
-SPLASH_URL = 'http://192.168.2.220:8050'
+SPLASH_URL = 'http://127.0.0.1:8050'
 
 # User agent setting
 USER_AGENT_LIST = [
