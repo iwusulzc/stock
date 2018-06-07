@@ -44,9 +44,12 @@ class EastmoneySpider(scrapy.Spider):
 	"""
 
 	def parse(self, response):
+		stock_match = ['00', '30', '600']
+
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
 
 		stock_ul = response.xpath('//div[@id="quotesearch"]/ul')
+		parse_stock_nr = 0
 
 		for stock in stock_ul:
 			stock_name_list = stock.xpath('li/a/text()').extract()
@@ -60,13 +63,18 @@ class EastmoneySpider(scrapy.Spider):
 
 			stock_list = zip(stock_name_list, stock_url_list)
 
+
 			for name, url in stock_list:
 				_name = name.split('(')[0]
 				code = stock_code_pat.findall(name)[0]
+				if (code[0:2] not in stock_match and code[0:3] not in stock_match):
+					continue
 
 				self.logger.info("parse %s, %s", _name, code)
+				parse_stock_nr += 1
 
 				yield SplashRequest(url, callback = self.parse_stock_page, args={'wait': 20})
+		self.logger.info("parse stock number: %d", parse_stock_nr)
 
 	def parse_stock_page(self, response):
 		f10_block = response.xpath('//div[@class="qphox"]/div[@class="hqrls"]/div[@class="cells"]')
@@ -100,8 +108,8 @@ class EastmoneySpider(scrapy.Spider):
 			u'所属证监会行业' : 'industry',
 			u'区域' : 'region',
 			u'注册资本(元)' : 'reg_capital',
-			u'公司简介' : 'company_profile',
-			u'经营范围' : 'scope_business',
+			#u'公司简介' : 'company_profile',
+			#u'经营范围' : 'scope_business',
             }
 
 		# 公司概况表
@@ -144,7 +152,8 @@ class EastmoneySpider(scrapy.Spider):
 
 			sm_content += '\n'
 
-		stockItem['subject_matter'] = sm_content
+		if 'subject_matter' in stockItem:
+			stockItem['subject_matter'] = sm_content
 
 		# next page: 财务分析
 		financial_analysis_url = response.xpath('//li[@id="NewFinanceAnalysis"]/a/@href').extract()[0]
@@ -192,10 +201,14 @@ class EastmoneySpider(scrapy.Spider):
 			}
 			
 		stockItem = response.meta['item']
-		stockItem['main_indicator'] = []
 
 		# main indicator table
 		trs = response.xpath('//div[@id="report_zyzb"]/table/tbody/tr')
+		if (len(trs) != 39):
+			self.logger.warning("%s: Incomplete data parse(%d)", \
+				sys._getframe().f_code.co_name, len(trs))
+			return
+
 
 		#处理表头，取出报告期日期
 		period_date = []
@@ -225,27 +238,25 @@ class EastmoneySpider(scrapy.Spider):
 
 			if td_value:
 				tds_value.append(td_value)
-
+				
 		period_dict = {u'按报告期' : 0, u'按年度' : 1, u'按单季度' : 2}
 		period = response.xpath('//ul[@id="zyzbTab"]/li[@class="current"]/text()').extract()[0].strip()
 
 		for x in range(1, len(tds_value[0])):
-			stockMainIndicator = StockMainIndicator()
+			_stockItem = stockItem.copy()
+
 			for y in range(len(tds_value)):
-				key = tds_value[y][0]
+				key = tds_value[y][0].strip(' \n')
 				if key not in stock_kw_dict:
 					self.logger.warning("%s: No process key = %s", \
 						sys._getframe().f_code.co_name, key)
 					break
 				item = stock_kw_dict[key]
-				stockMainIndicator[item] = self.unit_convert(tds_value[y][x])
-			stockMainIndicator['date'] = period_date[x]
-			
-			_stockItem = stockItem.copy()
-			_stockItem['main_indicator'].append(stockMainIndicator)
+				_stockItem[item] = self.unit_convert(tds_value[y][x])
+			_stockItem['date'] = period_date[x]
 			_stockItem['period'] = period
 
-		yield _stockItem
+			yield _stockItem
 
 		if period in period_dict:
 			page = period_dict[period]
@@ -263,103 +274,6 @@ class EastmoneySpider(scrapy.Spider):
 		else:
 			self.logger.error("%s: period get error(%s)", sys._getframe().f_code.co_name, period)
 			# raise error info??
-
-	def __parse_cpbd_page(self, response):
-		stockBaseInfo = StockBaseInfo()
-	
-		stockBaseInfo['name'] = response.xpath('//*[@id="hq_1"]/text()').extract()[0]
-		stockBaseInfo['code'] = response.xpath('//div[@class="main"]/div/div[@class="qphox"]/div[@class="sckifbox"]/div[@class="scklox"]/div[@class="cnt"]/p[@class="key"]/a/text()').extract()[0]
-
-		# 最新指标表格提取
-		tables = response.xpath('//div[@id="zxzbtable"]/table')
-		for table in tables:
-			trs = table.xpath('tbody/tr')
-			for tr in trs:
-				th = tr.xpath('th[@class="tips-fieldname-Left"]')
-				td = tr.xpath('td[@class="tips-data-Left"]')
-
-				if not th or not td:
-					self.logger.error("%s: get stock base info", sys._getframe().f_code.co_name)
-
-				for _th, _td in zip(th, td):
-					title = _th.xpath('span/text()').extract()
-					value = _td.xpath('span/text()').extract()
-
-					if title[0] == u"基本每股收益(元)":
-						stockBaseInfo['eps'] = value[0]
-					elif title[0] == u"扣非每股收益(元)":
-						stockBaseInfo['neps'] = value[0]
-					elif title[0] == u"稀释每股收益(元)":
-						stockBaseInfo['deps'] = value[0]
-					elif title[0] == u"每股净资产(元)":
-						stockBaseInfo['bvps'] = value[0]
-					elif title[0] == u"每股公积金(元)":
-						stockBaseInfo['cfps'] = value[0]
-					elif title[0] == u"每股未分配利润(元)":
-						stockBaseInfo['uddps'] = value[0]
-					elif title[0] == u"每股经营现金流(元)":
-						stockBaseInfo['ocfps'] = value[0]
-					elif title[0] == u"总股本(万股)":
-						stockBaseInfo['tcs'] = value[0]
-					elif title[0] == u"流通股本(万股)":
-						stockBaseInfo['nc'] = value[0]
-					elif title[0] == u"加权净资产收益率(%)":
-						stockBaseInfo['wnay'] = value[0]
-					elif title[0] == u"营业总收入(元)":
-						stockBaseInfo['gr'] = value[0]
-					elif title[0] == u"归属净利润(元)":
-						stockBaseInfo['anp'] = value[0]
-					elif title[0] == u"扣非净利润(元)":
-						stockBaseInfo['nnp'] = value[0]
-					elif title[0] == u"毛利率(%)":
-						stockBaseInfo['gir'] = value[0]
-					elif title[0] == u"营业总收入滚动环比增长(%)":
-						stockBaseInfo['grrrc'] = value[0]
-					elif title[0] == u"归属净利润滚动环比增长(%)":
-						stockBaseInfo['anprrc'] = value[0]
-					elif title[0] == u"扣非净利润滚动环比增长(%)":
-						stockBaseInfo['nnprrc'] = value[0]
-					elif title[0] == u"资产负债率(%)":
-						stockBaseInfo['alr'] = value[0]
-					elif title[0] == u"营业总收入同比增长(%)":
-						stockBaseInfo['yygtr'] = value[0]
-					elif title[0] == u"归属净利润同比增长(%)":
-						stockBaseInfo['anpg'] = value[0]
-					elif title[0] == u"扣非净利润同比增长(%)":
-						stockBaseInfo['nnpg'] = value[0]
-					else:
-						self.logger.warning("%s: Unknow item, %s = %s", sys._getframe().f_code.co_name, name, value)
-
-		# 核心题材
-		sms = response.xpath('//div[@class="section"]/div/div[@class="summary"]/p')
-		sm_content = ""
-
-		for sm in sms: 
-			content = sm.xpath('./text()').extract()
-			#content = re.sub(u'(要点)<.*>', '', _content)
-			for c in content:
-				sm_content += c
-			
-			sm_content += '\n'
-	
-		stockBaseInfo['sm'] = sm_content
-
-		if stockBaseInfo:
-			yield stockBaseInfo
-
-		stock_main_indicator_url = response.urljoin(response.xpath('//div[@id="zyzb"]/a/@href').extract()[0])
-
-		for page in range(0, 3):
-			yield SplashRequest(stock_main_indicator_url, \
-				callback = self.parse_financial_analysis_page, endpoint='execute', \
-				args={'lua_source': script, 'wait': 10, 'period': page})
-
-	def data_menu_url_get(self, response):
-		data_menu = response.xpath('//div[@class="nav"]/div[@class="navlist"]/ul[@class="mu101"]/li')[1]
-		data_menu_url = data_menu.css('a::attr(href)')[3].extract()
-		if data_menu_url:
-			self.logger.debug('data menu href: %s', data_menu_url)
-		return data_menu_url
 
 	# str_value format: 1234亿, 1234万亿, 1234万
 	def unit_convert(self, str_value):

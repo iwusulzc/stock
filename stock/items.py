@@ -8,18 +8,14 @@
 import scrapy
 
 
-class StockItem(scrapy.Item):
+class StockBaseInfoItem(scrapy.Item):
 	name = scrapy.Field()
 	code = scrapy.Field()
 	exchange = scrapy.Field()
 	industry = scrapy.Field()
 	reg_capital = scrapy.Field()
 	region = scrapy.Field()
-	company_profile = scrapy.Field()
-	scope_business = scrapy.Field()
 	period = scrapy.Field()          # 报告期
-	main_indicator = scrapy.Field()
-	subject_matter = scrapy.Field()  # 核心题材
         
 class StockMainIndicator(scrapy.Item):
 	date = scrapy.Field()   # 报告期日期
@@ -71,3 +67,14 @@ class StockMainIndicator(scrapy.Item):
 	tlrcl = scrapy.Field()  # 流动负债/总负债(%)（Total liabilities ratio of current liabilities）
 	lr = scrapy.Field()     # 流动比率（liquidity ratio）
 	qr = scrapy.Field()     # 速动比率（quick ratio）
+
+class CompanyInfo(scrapy.Item):
+	company_profile = scrapy.Field()
+	scope_business = scrapy.Field()
+	subject_matter = scrapy.Field()  # 核心题材
+
+class StockItem(StockBaseInfoItem, StockMainIndicator):
+	pass
+
+class StockExItem(StockItem, CompanyInfo):
+	pass
