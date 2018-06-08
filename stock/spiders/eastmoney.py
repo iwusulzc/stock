@@ -199,16 +199,49 @@ class EastmoneySpider(scrapy.Spider):
 			u'流动比率' : 'lr',
 			u'速动比率' : 'qr',
 			}
-			
+
+		stock_kws = {
+			'eps',
+			'neps',
+			'deps',
+			'bvps',
+			'cfps',
+			'uddps',
+			'ocfps',
+			'gr',
+			'gp',
+			'anp',
+			'nnp',
+			'yygtr',
+			'anpg',
+			'nnpg',
+			'grrrc',
+			'anprrc',
+			'nnprrc',
+			'wnay',
+			'ridna',
+			'dacer',
+			'gpr',
+			'npr',
+			'etr',
+			'rrpr',
+			'scfrr',
+			'oircf',
+			'ttc',
+			'dso',
+			'dii',
+			'alr',
+			'tlrcl',
+			'lr',
+			'qr',
+		}
+
 		stockItem = response.meta['item']
+		for kw in stock_kws:
+			stockItem[kw] = ''
 
 		# main indicator table
 		trs = response.xpath('//div[@id="report_zyzb"]/table/tbody/tr')
-		if (len(trs) != 39):
-			self.logger.warning("%s: Incomplete data parse(%d)", \
-				sys._getframe().f_code.co_name, len(trs))
-			return
-
 
 		#处理表头，取出报告期日期
 		period_date = []
