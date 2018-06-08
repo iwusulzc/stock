@@ -20,6 +20,8 @@ LOG_LEVEL = 'DEBUG'
 
 SPLASH_URL = 'http://127.0.0.1:8050'
 
+RETRY_TIMES = 5
+
 # User agent setting
 USER_AGENT_LIST = [
 	"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
@@ -103,6 +105,7 @@ DOWNLOADER_MIDDLEWARES = {
 	'scrapy_splash.SplashCookiesMiddleware': 723,
 	'scrapy_splash.SplashMiddleware': 725,
 	'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
+	'scrapy.downloadermiddlewares.retry.RetryMiddleware' : 820,
 }
 
 # Enable or disable extensions

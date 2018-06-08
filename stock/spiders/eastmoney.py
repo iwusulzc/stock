@@ -130,8 +130,8 @@ class EastmoneySpider(scrapy.Spider):
 				if (key == 'reg_capital'):
 					value = self.unit_convert(value)
 				elif (key == 'code' and value == '--'):
-					continue
-				else
+					return
+				else:
 					pass
 
 				stockItem[key] = value
@@ -312,7 +312,7 @@ class EastmoneySpider(scrapy.Spider):
 			# raise error info??
 
 	# str_value format: 1234亿, 1234万亿, 1234万
-	def unit_convert(str_value):
+	def unit_convert(self, str_value):
 		unit_dict = {'万亿' : 1000000000000, '千亿' : 100000000000, '亿' : 100000000, \
 					'万万' : 100000000, '千万' : 10000000, '百万' : 1000000, '十万' : 100000, '万' : 10000, '千' : 1000}
 		str_value = str_value.strip(' \n')
