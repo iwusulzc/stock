@@ -115,8 +115,7 @@ class EastmoneySpider(scrapy.Spider):
 		# 公司概况表
 		trs = response.xpath('//table[@id="Table0"]/tbody/tr')
 		
-			
-		for tr in trs[3 :]:
+		for tr in trs:
 			ths = tr.xpath('th/text()').extract()
 			tds = tr.xpath('td/text()').extract()
 			
@@ -129,9 +128,13 @@ class EastmoneySpider(scrapy.Spider):
 				key = stock_kw_dict[title]
 
 				if (key == 'reg_capital'):
-					stockItem[key] = self.unit_convert(value)
-				else:
-					stockItem[key] = value
+					value = self.unit_convert(value)
+				elif (key == 'code' and value == '--'):
+					continue
+				else
+					pass
+
+				stockItem[key] = value
 
 		coreconception_url = response.xpath('//li[@id="CoreConception"]/a/@href').extract()[0]
 		r = SplashRequest(response.urljoin(coreconception_url), \
@@ -309,15 +312,15 @@ class EastmoneySpider(scrapy.Spider):
 			# raise error info??
 
 	# str_value format: 1234亿, 1234万亿, 1234万
-	def unit_convert(self, str_value):
+	def unit_convert(str_value):
 		unit_dict = {'万亿' : 1000000000000, '千亿' : 100000000000, '亿' : 100000000, \
 					'万万' : 100000000, '千万' : 10000000, '百万' : 1000000, '十万' : 100000, '万' : 10000, '千' : 1000}
 		str_value = str_value.strip(' \n')
-		ret = re.search('^(\d+|\d+\.\d+)$', str_value)
+		ret = re.search('^([-]?\d+|[-]?\d+\.\d+)$', str_value)
 		if (ret is not None):
 			return str_value
 
-		ret = re.search('^(\d+|\d+\.\d+)([\u4e00-\u9fa5]+)$', str_value)
+		ret = re.search('^([-]?\d+|[-]?\d+\.\d+)([\u4e00-\u9fa5]+)$', str_value)
 
 		if (ret is None):
 			return str_value
