@@ -44,7 +44,7 @@ class EastmoneySpider(scrapy.Spider):
 	"""
 
 	def parse(self, response):
-		stock_match = ['00', '30', '600']
+		stock_match = ['00', '30', '60']
 
 		#stockListLoader = ItemLoader(item = StockListItem, response = response)
 
@@ -130,11 +130,16 @@ class EastmoneySpider(scrapy.Spider):
 				if (key == 'reg_capital'):
 					value = self.unit_convert(value)
 				elif (key == 'code' and value == '--'):
+					self.logger.info('stockitem code was NULL')
 					return
 				else:
 					pass
 
 				stockItem[key] = value
+
+		if 'code' not in stockItem:
+			self.logger.warning('stockitem base info get failure')
+			print(trs)
 
 		coreconception_url = response.xpath('//li[@id="CoreConception"]/a/@href').extract()[0]
 		r = SplashRequest(response.urljoin(coreconception_url), \
@@ -277,6 +282,9 @@ class EastmoneySpider(scrapy.Spider):
 				
 		period_dict = {u'按报告期' : 0, u'按年度' : 1, u'按单季度' : 2}
 		period = response.xpath('//ul[@id="zyzbTab"]/li[@class="current"]/text()').extract()[0].strip()
+
+		if 'code' not in stockItem:
+			self.logger.warning('stockitem not code item')
 
 		for x in range(1, len(tds_value[0])):
 			_stockItem = stockItem.copy()
