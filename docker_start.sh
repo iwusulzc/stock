@@ -5,7 +5,7 @@ while [ 1 ]; do
 			service docker stop
 			service docker start
 
-			docker run -d -p 8050:8050  --add-host='eastmoney.com:61.152.229.228' scrapinghub/splash
+			docker run -d -p 8050:8050  --add-host='eastmoney.com:61.152.229.228' scrapinghub/splash 
 			echo "docker start..."
 		fi
 done

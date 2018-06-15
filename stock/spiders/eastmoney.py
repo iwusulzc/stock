@@ -63,7 +63,6 @@ class EastmoneySpider(scrapy.Spider):
 
 			stock_list = zip(stock_name_list, stock_url_list)
 
-
 			for name, url in stock_list:
 				_name = name.split('(')[0]
 				code = stock_code_pat.findall(name)[0]
@@ -110,7 +109,7 @@ class EastmoneySpider(scrapy.Spider):
 			u'注册资本(元)' : 'reg_capital',
 			#u'公司简介' : 'company_profile',
 			#u'经营范围' : 'scope_business',
-            }
+			}
 
 		# 公司概况表
 		trs = response.xpath('//table[@id="Table0"]/tbody/tr')
@@ -141,11 +140,12 @@ class EastmoneySpider(scrapy.Spider):
 			self.logger.warning('stockitem base info get failure')
 			print(trs)
 
-		coreconception_url = response.xpath('//li[@id="CoreConception"]/a/@href').extract()[0]
-		r = SplashRequest(response.urljoin(coreconception_url), \
-			callback = self.parse_coreconception_page, args={'wait': 20})
-		r.meta['item'] = stockItem
-		yield r        
+		coreconception_url = response.xpath('//li[@id="CoreConception"]/a/@href').extract()
+		if coreconception_url:
+			r = SplashRequest(response.urljoin(coreconception_url[0]), \
+				callback = self.parse_coreconception_page, args={'wait': 20})
+			r.meta['item'] = stockItem
+			yield r        
 
 	def parse_coreconception_page(self, response):
 		stockItem = response.meta['item']
@@ -209,39 +209,10 @@ class EastmoneySpider(scrapy.Spider):
 			}
 
 		stock_kws = {
-			'eps',
-			'neps',
-			'deps',
-			'bvps',
-			'cfps',
-			'uddps',
-			'ocfps',
-			'gr',
-			'gp',
-			'anp',
-			'nnp',
-			'yygtr',
-			'anpg',
-			'nnpg',
-			'grrrc',
-			'anprrc',
-			'nnprrc',
-			'wnay',
-			'ridna',
-			'dacer',
-			'gpr',
-			'npr',
-			'etr',
-			'rrpr',
-			'scfrr',
-			'oircf',
-			'ttc',
-			'dso',
-			'dii',
-			'alr',
-			'tlrcl',
-			'lr',
-			'qr',
+			'eps', 'neps', 'deps', 'bvps', 'cfps', 'uddps', 'ocfps', 'gr',
+			'gp', 'anp', 'nnp', 'yygtr', 'anpg', 'nnpg', 'grrrc', 'anprrc',
+			'nnprrc', 'wnay', 'ridna', 'dacer', 'gpr', 'npr', 'etr', 'rrpr',
+			'scfrr', 'oircf', 'ttc', 'dso', 'dii', 'alr', 'tlrcl', 'lr', 'qr',
 		}
 
 		stockItem = response.meta['item']
