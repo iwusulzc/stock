@@ -61,9 +61,7 @@ class EastmoneySpider(scrapy.Spider):
 	 
 			stock_code_pat = re.compile('\((.*)\)')
 
-			stock_list = zip(stock_name_list, stock_url_list)
-
-			for name, url in stock_list:
+			for name, url in zip(stock_name_list, stock_url_list):
 				_name = name.split('(')[0]
 				code = stock_code_pat.findall(name)[0]
 				if (code[0:2] not in stock_match and code[0:3] not in stock_match):
